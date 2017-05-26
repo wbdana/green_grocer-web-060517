@@ -18,36 +18,38 @@ def consolidate_cart(cart)
   consolidated_cart
 end
 
-cart = {
-  "AVOCADO" => {:price => 3.0, :clearance => true, :count => 3},
-  "KALE"    => {:price => 3.0, :clearance => false, :count => 1}
-}
-
-coupons = {:item => "AVOCADO", :num => 2, :cost => 5.0}
-
-goal = {
-  "AVOCADO" => {:price => 3.0, :clearance => true, :count => 1},
-  "KALE"    => {:price => 3.0, :clearance => false, :count => 1},
-  "AVOCADO W/COUPON" => {:price => 5.0, :clearance => true, :count => 1},
-}
 
 def apply_coupons(cart, coupons)
-  coupons.each do |k, v|
-    if cart.keys.include?(coupons[:item])
-      cart["#{coupons[:item]} W/COUPON"] = {}
-      cart["#{coupons[:item]} W/COUPON"][:price] = coupons[:cost]
-      cart["#{coupons[:item]} W/COUPON"][:clearance] = cart[coupons[:item]][:clearance]
-      cart["#{coupons[:item]} W/COUPON"][:count] = cart[coupons[:item]][:count] % coupons[:num]
-      cart[coupons[:item]][:count] = cart[coupons[:item]][:count] % coupons[:num]
+  coupons.each do |c|
+    if cart[c[:item]] && cart[c[:item]][:count] >= c[:num]
+      cart.merge!({"#{c[:item]} W/COUPON" => {:price => c[:cost], :clearance => cart[c[:item]][:clearance], :count => cart[c[:item]][:count] / c[:num]}})
+      cart[c[:item]][:count] = cart[c[:item]][:count] % c[:num]
     end
   end
-  return items
+  cart
 end
 
 def apply_clearance(cart)
-
+  cart.each do |k, v|
+    if cart[k][:clearance] == true
+      new_price = cart[k][:price] * 0.80
+      cart[k][:price] = new_price.round(2)
+    end
+  end
+  cart
 end
 
 def checkout(cart, coupons)
-
+  cart = consolidate_cart(cart)
+  apply_coupons(cart, coupons)
+  apply_clearance(cart)
+  total = 0
+  cart.each do |k, v|
+    i_total = v[:price] * v[:count]
+    total = total + i_total
+  end
+  if total > 100
+    total = total * 0.90
+  end
+  total
 end
